@@ -15,7 +15,11 @@ st.set_page_config(page_title="Dan Thien Nguyen, Ph.D.", page_icon="🔋", layou
 
 
 def img_b64(path: Path) -> str:
-    return base64.b64encode(path.read_bytes()).decode()
+    """Base64 of an image; also looks in the app's top folder in case assets/ was flattened on upload."""
+    for p in (path, HERE / path.name):
+        if p.is_file():
+            return base64.b64encode(p.read_bytes()).decode()
+    return ""
 
 
 CSS = """
@@ -185,7 +189,7 @@ def hero() -> str:
       <a class="btn ghost" href="#experience">See my work</a>
     </div>
   </div>
-  <img class="portrait" src="data:image/jpeg;base64,{photo}" alt="Portrait of Dan Thien Nguyen"/>
+  {f'<img class="portrait" src="data:image/jpeg;base64,{photo}" alt="Portrait of Dan Thien Nguyen"/>' if photo else ""}
 </section>
 <div class="stats">{''.join(f'<div class="stat"><b>{escape(n)}</b><span>{escape(t)}</span></div>' for n, t in C.STATS)}</div>
 """
@@ -235,8 +239,8 @@ def research() -> str:
     def hl_tile(src, title, date, url, img):
         meta = f'<div class="d">{escape(date)}{" · " if date and url else ""}{"Read →" if url else ""}</div>' if (date or url) else ""
         text = f'<div class="hl-text"><div><div class="k">{escape(src)}</div><h4>{escape(title)}</h4></div>{meta}</div>'
-        thumb = (f'<img class="hl-thumb" src="data:image/jpeg;base64,{img_b64(HERE / "assets" / img)}" alt="{escape(src)} story image"/>'
-                 if img else "")
+        data = img_b64(HERE / "assets" / img) if img else ""
+        thumb = f'<img class="hl-thumb" src="data:image/jpeg;base64,{data}" alt="{escape(src)} story image"/>' if data else ""
         inner = f'<div class="hl-in">{thumb}{text}</div>'
         return (f'<a class="tile light hl-link" href="{url}" target="_blank">{inner}</a>' if url
                 else f'<div class="tile light">{inner}</div>')
